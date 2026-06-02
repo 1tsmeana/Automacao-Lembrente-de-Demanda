@@ -1,6 +1,8 @@
 # Automação de Lembrete de Demandas Atrasadas
 
-Projeto demonstrativo de automação criada no Power Automate para consultar uma base de controle, identificar demandas com prazo vencido e enviar lembretes automáticos por e-mail.
+Automação desenvolvida no Power Automate para uso periódico em ambiente de trabalho.
+
+O fluxo realiza uma consulta programada em uma base de controle, filtra os registros que ainda não foram respondidos e verifica quais demandas estão com o prazo vencido. Quando uma pendência é identificada, o Power Automate envia automaticamente um e-mail de lembrete para os responsáveis, contendo as principais informações da demanda.
 
 ## Objetivo
 
