@@ -23,7 +23,7 @@
         "clientLastModifiedTime": "{{LAST_MODIFIED_TIME}}",
         "connectionKeySavedTimeKey": "{{CONNECTION_KEY_SAVED_TIME}}",
         "creationSource": null,
-        "modifiedSources": "Portal"
+        "modifiedSources": "Fonte/Sistema"
       },
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
@@ -41,18 +41,18 @@
         "Recurrence": {
           "recurrence": {
             "frequency": "Hour",
-            "interval": 5,
+            "interval": 3,
             "timeZone": "E. South America Standard Time",
-            "startTime": "{{START_TIME}}"
+            "startTime": "{{TIMESTAMP}}"
           },
           "evaluatedRecurrence": {
             "frequency": "Hour",
-            "interval": 5,
+            "interval": 3,
             "timeZone": "E. South America Standard Time",
-            "startTime": "{{START_TIME}}"
+            "startTime": "{{TIMESTAMP}}"
           },
           "metadata": {
-            "operationMetadataId": "{{TRIGGER_OPERATION_METADATA_ID}}"
+            "operationMetadataId": "{{UUID}}"
           },
           "type": "Recurrence"
         }
@@ -61,26 +61,153 @@
         "Aplicar_a_cada": {
           "foreach": "@body('HTTP')?['results']",
           "actions": {
-            "Enviar_um_e-mail_(V2)_2": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "{{EMAIL_OPERATION_METADATA_ID}}"
+            "Condição": {
+              "actions": {
+                "HTTP_2": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "{{UUID}}"
+                  },
+                  "type": "Http",
+                  "inputs": {
+                    "method": "PATCH",
+                    "uri": "https://api.notion.com/v1/pages/@{items('Aplicar_a_cada')?['id']}",
+                    "headers": {
+                      "Authorization": "Bearer {{API_TOKEN}}",
+                      "Notion-Version": "2022-06-28",
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "properties": {
+                        "Status": {
+                          "status": {
+                            "name": "Respondido"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                  "connectionName": "shared_office365",
-                  "operationId": "SendEmailV2"
-                },
-                "parameters": {
-                  "emailMessage/To": "{{EMAIL_DESTINATARIOS}}",
-                  "emailMessage/Subject": "Lembrete de demanda atrasada - @{items('Aplicar_a_cada')?['properties']?['Órgão']?['rich_text']?[0]?['plain_text']} - @{items('Aplicar_a_cada')?['properties']?['Pregão eletrônico']?['rich_text']?[0]?['plain_text']}",
-                  "emailMessage/Body": "<p>Olá,<br>\n<br>\nExiste uma demanda atrasada no controle interno.<br>\n<br>\nUnidade/Área: @{coalesce(items('Aplicar_a_cada')?['properties']?['Órgão']?['rich_text']?[0]?['plain_text'], 'Não informado')}<br>\nIdentificador da demanda: @{coalesce(items('Aplicar_a_cada')?['properties']?['Pregão eletrônico']?['rich_text']?[0]?['plain_text'], 'Não informado')}<br>\nFonte/Sistema: @{coalesce(items('Aplicar_a_cada')?['properties']?['Portal']?['url'], 'Não informado')}<br>\nTipo: @{coalesce(items('Aplicar_a_cada')?['properties']?['Tipo']?['status']?['name'], 'Não informado')}<br>\nData de envio: @{coalesce(items('Aplicar_a_cada')?['properties']?['Data de envio do esclarecimento']?['date']?['start'], 'Não informado')}<br>\nPrazo de resposta: @{coalesce(items('Aplicar_a_cada')?['properties']?['Prazo de resposta']?['date']?['start'], 'Não informado')}<br>\n<br>\nFavor verificar se houve resposta e atualizar o status da demanda.</p>",
-                  "emailMessage/Importance": "Normal"
-                },
-                "authentication": "@parameters('$authentication')"
-              }
+              "runAfter": {},
+              "else": {
+                "actions": {
+                  "Condição_2": {
+                    "actions": {
+                      "HTTP_3": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "{{UUID}}"
+                        },
+                        "type": "Http",
+                        "inputs": {
+                          "method": "PATCH",
+                          "uri": "https://api.notion.com/v1/pages/@{items('Aplicar_a_cada')?['id']}",
+                          "headers": {
+                            "Authorization": "Bearer {{API_TOKEN}}",
+                            "Notion-Version": "2022-06-28",
+                            "Content-Type": "application/json"
+                          },
+                          "body": {
+                            "properties": {
+                              "Status": {
+                                "status": {
+                                  "name": "Atrasado"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "Aplicar_a_cada_2": {
+                        "foreach": "@items('Aplicar_a_cada')?['properties']?['Responsável']?['people']",
+                        "actions": {
+                          "Enviar_um_email_(V2)_2": {
+                            "runAfter": {},
+                            "metadata": {
+                              "operationMetadataId": "{{UUID}}"
+                            },
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                                "connectionName": "shared_office365",
+                                "operationId": "SendEmailV2"
+                              },
+                              "parameters": {
+                                "emailMessage/To": "@item()?['person']?['email']",
+                                "emailMessage/Subject": "Lembrete de demanda atrasada - @{items('Aplicar_a_cada')?['properties']?['Unidade/Área']?['rich_text']?[0]?['plain_text']} - @{items('Aplicar_a_cada')?['properties']?['Identificador da demanda']?['rich_text']?[0]?['plain_text']}",
+                                "emailMessage/Body": "<p>Olá,<br>\n<br>\nExiste uma demanda atrasada no controle interno.<br>\n<br>\nUnidade/Área: @{coalesce(items('Aplicar_a_cada')?['properties']?['Unidade/Área']?['rich_text']?[0]?['plain_text'], 'Não informado')}<br>\nIdentificador da demanda: @{coalesce(items('Aplicar_a_cada')?['properties']?['Identificador da demanda']?['rich_text']?[0]?['plain_text'], 'Não informado')}<br>\nFonte/Sistema: @{coalesce(items('Aplicar_a_cada')?['properties']?['Fonte/Sistema']?['url'], 'Não informado')}<br>\nTipo: @{coalesce(items('Aplicar_a_cada')?['properties']?['Tipo']?['status']?['name'], 'Não informado')}<br>\nData de envio: @{coalesce(items('Aplicar_a_cada')?['properties']?['Data de envio']?['date']?['start'], 'Não informado')}<br>\nPrazo de resposta: @{coalesce(items('Aplicar_a_cada')?['properties']?['Prazo de resposta']?['date']?['start'], 'Não informado')}<br>\n<br>\nFavor verificar se houve resposta e atualizar o status da demanda.</p>",
+                                "emailMessage/Importance": "Normal"
+                              },
+                              "authentication": "@parameters('$authentication')"
+                            }
+                          }
+                        },
+                        "runAfter": {
+                          "HTTP_3": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "{{UUID}}"
+                        },
+                        "type": "Foreach"
+                      }
+                    },
+                    "runAfter": {},
+                    "else": {
+                      "actions": {
+                        "HTTP_4": {
+                          "runAfter": {},
+                          "metadata": {
+                            "operationMetadataId": "{{UUID}}"
+                          },
+                          "type": "Http",
+                          "inputs": {
+                            "method": "PATCH",
+                            "uri": "https://api.notion.com/v1/pages/@{items('Aplicar_a_cada')?['id']}",
+                            "headers": {
+                              "Authorization": "Bearer {{API_TOKEN}}",
+                              "Notion-Version": "2022-06-28",
+                              "Content-Type": "application/json"
+                            },
+                            "body": {
+                              "properties": {
+                                "Status": {
+                                  "status": {
+                                    "name": "Em andamento"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "expression": {
+                      "equals": [
+                        "@and(\r\n  not(empty(items('Aplicar_a_cada')?['properties']?['Prazo de resposta']?['date']?['start'])),\r\n  less(\r\n    ticks(concat(formatDateTime(items('Aplicar_a_cada')?['properties']?['Prazo de resposta']?['date']?['start'], 'yyyy-MM-dd'), 'T00:00:00Z')),\r\n    ticks(concat(formatDateTime(convertTimeZone(utcNow(), 'UTC', 'E. South America Standard Time'), 'yyyy-MM-dd'), 'T00:00:00Z'))\r\n  )\r\n)",
+                        true
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "{{UUID}}"
+                    },
+                    "type": "If"
+                  }
+                }
+              },
+              "expression": {
+                "equals": [
+                  "@equals(items('Aplicar_a_cada')?['properties']?['Respondido?']?['checkbox'], true)",
+                  true
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "{{UUID}}"
+              },
+              "type": "If"
             }
           },
           "runAfter": {
@@ -89,14 +216,14 @@
             ]
           },
           "metadata": {
-            "operationMetadataId": "{{FOREACH_OPERATION_METADATA_ID}}"
+            "operationMetadataId": "{{UUID}}"
           },
           "type": "Foreach"
         },
         "HTTP": {
           "runAfter": {},
           "metadata": {
-            "operationMetadataId": "{{HTTP_OPERATION_METADATA_ID}}"
+            "operationMetadataId": "{{UUID}}"
           },
           "type": "Http",
           "inputs": {
@@ -117,19 +244,19 @@
             ]
           },
           "metadata": {
-            "operationMetadataId": "{{FILTER_OPERATION_METADATA_ID}}"
+            "operationMetadataId": "{{UUID}}"
           },
           "type": "Query",
           "inputs": {
             "from": "@body('HTTP')?['results']",
-            "where": "@and(\n  equals(item()?['properties']?['Respondido?']?['checkbox'], false),\n  less(\n    formatDateTime(item()?['properties']?['Prazo de resposta']?['date']?['start'], 'yyyy-MM-dd'),\n    formatDateTime(utcNow(), 'yyyy-MM-dd')\n  )\n)"
+            "where": "@and(\n  equals(item()?['properties']?['Respondido?']?['checkbox'], false),\n  not(empty(item()?['properties']?['Prazo de resposta']?['date']?['start'])),\n  less(\n    ticks(concat(formatDateTime(item()?['properties']?['Prazo de resposta']?['date']?['start'], 'yyyy-MM-dd'), 'T00:00:00Z')),\n    ticks(concat(formatDateTime(convertTimeZone(utcNow(), 'UTC', 'E. South America Standard Time'), 'yyyy-MM-dd'), 'T00:00:00Z'))\n  )\n)"
           }
         }
       }
     },
     "connectionReferences": {
       "shared_office365": {
-        "connectionName": "{{OUTLOOK_CONNECTION_NAME}}",
+        "connectionName": "shared-office365-{{UUID}}",
         "source": "Embedded",
         "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
         "tier": "NotSpecified",
