@@ -10,17 +10,6 @@ O fluxo realiza uma consulta programada em uma base de controle, analisa o statu
 
 Evitar que demandas pendentes fiquem sem acompanhamento, automatizando a verificação periódica de prazos, a atualização de status e o envio de alertas para os responsáveis.
 
-## ⚙️ Como funciona
-
-1. O fluxo é iniciado automaticamente por uma recorrência configurada no Power Automate.
-2. Uma ação HTTP consulta os registros armazenados em uma base de controle.
-3. O retorno da consulta é tratado em formato JSON.
-4. O fluxo percorre os registros retornados.
-5. Se a demanda estiver marcada como respondida, o status é atualizado para `Respondido`.
-6. Se a demanda não estiver respondida e o prazo estiver vencido, o status é atualizado para `Atrasado`.
-7. Para demandas atrasadas, o fluxo percorre o campo de responsáveis e envia um e-mail individual para cada pessoa.
-8. Se a demanda ainda estiver dentro do prazo, o status é mantido ou atualizado como `Em andamento`.
-
 ## 🧩 Principais regras do fluxo
 
 - Demandas respondidas recebem o status `Respondido`.
